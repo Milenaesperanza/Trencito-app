@@ -363,6 +363,7 @@
 
     var COOLDOWN_MS = 30000; // 30 segundos (sin 30_000)
     var REPORT_EVENT_URL = "https://erulkgzfszxpvsdoqrnq.supabase.co/rest/v1/events";
+    var REPORT_EVENT_FUNC_URL = "https://erulkgzfszxpvsdoqrnq.supabase.co/functions/v1/report-event";
 
     // =========================
     // Horarios (TEST: solo 1 estación)
@@ -884,11 +885,24 @@
       })
       .then(function (data) {
       if (data) console.log("OK:", data);
+      // disparar Edge Function (Telegram) en segundo plano
+      return fetch(REPORT_EVENT_FUNC_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVydWxrZ3pmc3p4cHZzZG9xcm5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NzM3MDUsImV4cCI6MjA4NjE0OTcwNX0.5ZWy7vvzHOHgyJOPKDfQeLrovHzm7m7Nx_BVq79ev3Y",
+          "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVydWxrZ3pmc3p4cHZzZG9xcm5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NzM3MDUsImV4cCI6MjA4NjE0OTcwNX0.5ZWy7vvzHOHgyJOPKDfQeLrovHzm7m7Nx_BVq79ev3Y"
+        },
+        body: JSON.stringify(eventObj)
+      });
       })
       .catch(function (err) {
       console.error("Fallo al enviar:", err);
       });
-
+      
+      // log de error de la Edge Function (si falla)
+      // no bloquea el flujo principal
+      
       // UI se actualiza solo si el POST fue exitoso
 
 
@@ -911,4 +925,3 @@
   </script>
 </body>
 </html>
-
