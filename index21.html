@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TrencitoApp🚂</title>
+
+  <style>
+    /* ===== Base ===== */
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #f6f6f6;
+    }
+
+    .app {
+      max-width: 420px;
+      margin: auto;
+      padding: 16px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      text-align: center;
+      margin-top: -8px;
+      margin-bottom: 20px;
+      font-size: 15px;
+      color: #555;
+      font-weight: 600;
+    }
+
+    .label {
+      display: block;
+      font-weight: 600;
+      margin: 6px 0 8px;
+    }
+
+    .field {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    /* ===== Inputs ===== */
+    .text {
+      width: 100%;
+      padding: 14px 48px 14px 14px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      background: #fff;
+    }
+
+    .text.locked {
+      background: #f0fff4;
+      border-color: #2ecc71;
+    }
+
+    /* input con espacio real para el botón "Listo" (override específico) */
+    #nameInput {
+      padding-right: 14px; /* normal */
+    }
+
+    /* selector estación */
+    #stationSelect {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      background: #fff;
+      margin-bottom: 16px;
+    }
+
+    /* ===== Botones ===== */
+    .buttons {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .buttons.two-cols { grid-template-columns: 1fr 1fr; }
+    .buttons.one-col { grid-template-columns: 1fr; }
+
+    .buttons .btn {
+      width: 100%;
+    }
+
+    .btn {
+      padding: 16px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      filter: grayscale(0.2);
+      cursor: not-allowed;
+    }
+
+    .partio { background: #2ecc71; color: #000; }
+    .demora { background: #f1c40f; color: #000; }
+    .cancelado { background: #e74c3c; }
+
+    .start {
+      width: 100%;
+      margin-bottom: 16px;
+      background: #111;
+      color: #fff;
+    }
+
+    .start:disabled {
+      opacity: 0.35;
+    }
+
+    @media (max-width: 360px) {
+      .buttons { grid-template-columns: 1fr; }
+    }
+
+    /* ===== Cuadro Próximos trenes ===== */
+    .next-trains {
+      display: none; /* se muestra solo en started */
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 12px 12px 10px;
+      margin: 4px 0 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    }
+
+    .next-trains .title {
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .next-trains ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .next-trains li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 10px;
+      border-radius: 10px;
+      background: #f7f7f7;
+      border: 1px solid #eee;
+      font-size: 15px;
+    }
+
+    .next-trains .dir {
+      font-weight: 700;
+      color: #111;
+    }
+
+    .next-trains .time {
+      font-weight: 800;
+      letter-spacing: 0.2px;
+    }
+
+    /* ===== Modal ===== */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 320px;
+      background: #fff;
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .modal-back {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      background: #111;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    /* ===== Botón "Listo" inline (iOS friendly) ===== */
+    .check-btn-inline {
+      width: 100%;
+      height: 44px;
+      border-radius: 10px;
+      border: 1px solid #2ecc71;
+      background: #fff;
+      color: #2ecc71;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .check-btn-inline.visible {
+      display: block;
+    }
+
+    .check-btn-inline.locked {
+      background: #2ecc71;
+      color: #fff;
+    }
+
+    /* Blindaje: por defecto NO mostrar botones de reporte */
+    .buttons button {
+      display: none;
+    }
+
+    .edit-name-link {
+    display: none;
+    margin-top: -8px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: #2ecc71;
+    text-align: center;
+    text-decoration: underline;
+    cursor: pointer;
+    }
+
+   .edit-name-link:hover {
+   opacity: 0.75;
+   }
+
+   .btn.exit {
+  margin-top: 12px;
+  width: 100%;
+  background: transparent;
+  color: #555;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  padding: 10px;
+  display: none; /* solo cuando started = true */
+  }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <h1>🚂🚃TrencitoApp🚃🚃</h1>
+    <p class="subtitle">La aplicación de l@s auxiliares del Urquiza</p>
+
+    <div id="nameSection">
+      <label class="label" for="nameInput">Soy:</label>
+      <div class="field">
+        <input
+          id="nameInput"
+          class="text"
+          type="text"
+          maxlength="9"
+          placeholder="Escribí tu nombre"
+        />
+      </div>
+
+      <button id="nameCheck" class="check-btn-inline" type="button" aria-label="Confirmar nombre">
+        ✓ Listo
+      </button>
+      <div id="editNameLink" class="edit-name-link">
+       O editá tu nombre
+      </div>
+  </div>
+
+
+
+    <label class="label" for="stationSelect">Estoy en:</label>
+    <select id="stationSelect">
+      <option value="">Buscá tu estación</option>
+    </select>
+
+    <button id="btnStart" class="btn start" disabled>Comenzar</button>
+
+    <!-- ✅ Cuadro Próximos trenes (arriba de botones de reporte) -->
+    <div id="nextTrainsBox" class="next-trains" aria-live="polite">
+      <div class="title">Próximos trenes:</div>
+      <ul id="nextTrainsList"></ul>
+    </div>
+
+    <div class="buttons two-cols">
+      <button class="btn partio" data-type="partio" data-direction="Lemos">Partió a Lemos</button>
+      <button class="btn partio" data-type="partio" data-direction="Lacroze">Partió a Lacroze</button>
+
+      <button class="btn demora" data-type="demora" data-direction="Lemos">Demorado a Lemos</button>
+      <button class="btn demora" data-type="demora" data-direction="Lacroze">Demorado a Lacroze</button>
+
+      <button class="btn cancelado" data-type="cancelado" data-direction="Lemos">Cancelado a Lemos</button>
+      <button class="btn cancelado" data-type="cancelado" data-direction="Lacroze">Cancelado a Lacroze</button>
+    </div>
+
+    <button id="btnExit" class="btn exit">Salir</button>
+
+  </div>
+
+  <div id="overlay" class="overlay" style="display:none;">
+    <div class="modal">
+      <div id="modalMessage" class="modal-title"></div>
+      <button id="btnBack" class="modal-back">Volver</button>
+    </div>
+  </div>
+
+  <script>
+    // =========================
+    // Config / Data (iOS-safe)
+    // =========================
+    var stations = [
+      { name: "Lemos", type: "terminal", directions: ["Lacroze"] },
+
+      { name: "Cabral", type: "anden_doble", directions: ["Lemos", "Lacroze"] },
+
+      { name: "Campo", type: "anden_central", directions: ["Lemos", "Lacroze"] },
+      { name: "Agneta", type: "anden_central", directions: ["Lemos", "Lacroze"] },
+      { name: "Lozano", type: "anden_central", directions: ["Lemos", "Lacroze"] },
+      { name: "Barrufaldi", type: "anden_central", directions: ["Lemos", "Lacroze"] },
+      { name: "La Salle", type: "anden_central", directions: ["Lemos", "Lacroze"] },
+      { name: "Ejército", type: "anden_central", directions: ["Lemos", "Lacroze"] },
+
+      { name: "Darío", type: "anden_doble", directions: ["Lemos", "Lacroze"] },
+      { name: "Newbery", type: "anden_doble", directions: ["Lemos", "Lacroze"] },
+      { name: "Podestá", type: "anden_doble", directions: ["Lemos", "Lacroze"] },
+      { name: "Coronado", type: "anden_doble", directions: ["Lemos", "Lacroze"] },
+      { name: "Bosch", type: "anden_doble", directions: ["Lemos", "Lacroze"] },
+      { name: "Tropezón", type: "anden_doble", directions: ["Lemos", "Lacroze"] },
+      { name: "Lourdes", type: "anden_doble", directions: ["Lemos", "Lacroze"] },
+      { name: "Moreno", type: "anden_doble", directions: ["Lemos", "Lacroze"] },
+      { name: "Lynch", type: "anden_doble", directions: ["Lemos", "Lacroze"] },
+      { name: "Devoto", type: "anden_doble", directions: ["Lemos", "Lacroze"] },
+      { name: "Libertador", type: "anden_doble", directions: ["Lemos", "Lacroze"] },
+      { name: "Beiró", type: "anden_doble", directions: ["Lemos", "Lacroze"] },
+      { name: "Arata", type: "anden_doble", directions: ["Lemos", "Lacroze"] },
+      { name: "Artigas", type: "anden_doble", directions: ["Lemos", "Lacroze"] },
+
+      { name: "Lacroze", type: "terminal", directions: ["Lemos"] }
+    ];
+
+    var COOLDOWN_MS = 30000; // 30 segundos (sin 30_000)
+    var REPORT_EVENT_URL = "https://erulkgzfszxpvsdoqrnq.supabase.co/rest/v1/events";
+
+    // =========================
+    // Horarios (TEST: solo 1 estación)
+    // =========================
+    // Nota: tiempos en formato "HH:MM" local del dispositivo.
+    // Cargado solo para Lynch para testear el funcionamiento.
+    var stationSchedules = {
+      "Lynch": {
+        weekdays: {
+          "Lemos":  ["05:20","05:45","06:05","06:25","06:45","07:05","07:25","07:45","08:10","08:35","09:05","09:35","10:05","10:35","11:05","11:35","12:05","12:35","13:05","13:35","14:05","14:35","15:05","15:35","16:05","16:35","17:05","17:35","18:05","18:35","19:05","19:35","20:05","20:35","21:05","21:35","22:05","22:35","23:05"],
+          "Lacroze":["05:10","05:30","05:55","06:15","06:35","06:55","07:15","07:35","08:00","08:25","08:55","09:25","09:55","10:25","10:55","11:25","11:55","12:25","12:55","13:25","13:55","14:25","14:55","15:25","15:55","16:25","16:55","17:25","17:55","18:25","18:55","19:25","19:55","20:25","20:55","21:25","21:55","22:25","22:55"]
+        },
+        saturday: {
+          "Lemos":  ["06:10","06:40","07:10","07:40","08:10","08:40","09:10","09:40","10:10","10:40","11:10","11:40","12:10","12:40","13:10","13:40","14:10","14:40","15:10","15:40","16:10","16:40","17:10","17:40","18:10","18:40","19:10","19:40","20:10","20:40","21:10","21:40","22:10"],
+          "Lacroze":["06:00","06:30","07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00","21:30","22:00"]
+        },
+        sunday: {
+          "Lemos":  ["07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00"],
+          "Lacroze":["06:50","07:20","07:50","08:20","08:50","09:20","09:50","10:20","10:50","11:20","11:50","12:20","12:50","13:20","13:50","14:20","14:50","15:20","15:50","16:20","16:50","17:20","17:50","18:20","18:50","19:20","19:50","20:20","20:50"]
+        }
+      }
+    };
+
+    // =========================
+    // DOM refs
+    // =========================
+    var stationSelect = document.getElementById("stationSelect");
+    var nameInput = document.getElementById("nameInput");
+    var nameCheck = document.getElementById("nameCheck");
+    var nameSection = document.getElementById("nameSection");
+    var editNameLink = document.getElementById("editNameLink");
+
+    var buttonsContainer = document.querySelector(".buttons");
+    var reportButtons = document.querySelectorAll(".buttons button");
+
+    var overlay = document.getElementById("overlay");
+    var modalMessage = document.getElementById("modalMessage");
+    var btnBack = document.getElementById("btnBack");
+    var btnStart = document.getElementById("btnStart");
+    var btnExit = document.getElementById("btnExit");
+
+    // Próximos trenes
+    var nextTrainsBox = document.getElementById("nextTrainsBox");
+    var nextTrainsList = document.getElementById("nextTrainsList");
+
+    // =========================
+    // State
+    // =========================
+    var cooldownObj = {}; // reemplazo iOS-safe de Map()
+    var nameLocked = false;
+    var started = false;
+
+    var nextTrainsTimer = null;
+
+    // =========================
+    // Helpers
+    // =========================
+    function getName() {
+      return (nameInput.value || "").replace(/^\s+|\s+$/g, "");
+    }
+
+    function getSelectedStationName() {
+      return (stationSelect.value || "").replace(/^\s+|\s+$/g, "");
+    }
+
+    function isNameValid() {
+      return getName().length > 0;
+    }
+
+    function canStart() {
+      return nameLocked && getSelectedStationName() !== "";
+    }
+
+    function setOverlayMessage() {
+      var name = getName();
+      modalMessage.textContent = name ? ("Gracias por tu reporte, " + name + ".") : "Gracias por tu reporte.";
+    }
+
+    function showOverlay() {
+      setOverlayMessage();
+      overlay.style.display = "flex";
+    }
+
+    function hideOverlay() {
+      overlay.style.display = "none";
+    }
+
+    function updateStartButton() {
+      btnStart.disabled = !canStart();
+    }
+
+    function updateNameUI() {
+      var shouldShow = isNameValid();
+
+      // mostrar/ocultar botón ✓ Listo
+      if (shouldShow) nameCheck.classList.add("visible");
+      else nameCheck.classList.remove("visible");
+
+      // estilos locked
+      if (nameLocked) {
+        nameInput.classList.add("locked");
+        nameCheck.classList.add("locked");
+      } else {
+        nameInput.classList.remove("locked");
+        nameCheck.classList.remove("locked");
+      }
+    }
+
+    function hideAllReportButtons() {
+      for (var i = 0; i < reportButtons.length; i++) {
+        reportButtons[i].style.display = "none";
+      }
+    }
+
+    function updateButtonsLayout() {
+      var visibleCount = 0;
+      for (var i = 0; i < reportButtons.length; i++) {
+        if (reportButtons[i].style.display !== "none") visibleCount++;
+      }
+
+      buttonsContainer.classList.remove("one-col");
+      buttonsContainer.classList.remove("two-cols");
+      if (visibleCount === 3) buttonsContainer.classList.add("one-col");
+      else buttonsContainer.classList.add("two-cols");
+    }
+
+    function arrayIncludes(arr, value) {
+      for (var i = 0; i < arr.length; i++) {
+        if (arr[i] === value) return true;
+      }
+      return false;
+    }
+
+    function findStationByName(stName) {
+      for (var i = 0; i < stations.length; i++) {
+        if (stations[i].name === stName) return stations[i];
+      }
+      return null;
+    }
+
+    function showReportButtonsForStation(stationName) {
+      var station = findStationByName(stationName);
+
+      hideAllReportButtons();
+
+      if (!station) {
+        updateButtonsLayout();
+        return;
+      }
+
+      for (var i = 0; i < reportButtons.length; i++) {
+        var dir = reportButtons[i].getAttribute("data-direction");
+        if (arrayIncludes(station.directions, dir)) {
+          reportButtons[i].style.display = "block";
+        }
+      }
+
+      updateButtonsLayout();
+    }
+
+    function stopNextTrainsTimer() {
+      if (nextTrainsTimer) {
+        window.clearInterval(nextTrainsTimer);
+        nextTrainsTimer = null;
+      }
+    }
+
+    function hideNextTrainsBox() {
+      nextTrainsBox.style.display = "none";
+      nextTrainsList.innerHTML = "";
+    }
+
+    function resetToPreStart() {
+      started = false;
+      hideAllReportButtons();
+      btnStart.style.display = "block";
+      updateButtonsLayout();
+
+      if (nameSection) nameSection.style.display = "block";
+
+      stopNextTrainsTimer();
+      hideNextTrainsBox();
+    }
+
+    function lockName() {
+    if (!isNameValid()) return;
+
+    nameLocked = true;
+    nameInput.readOnly = true;
+
+    nameCheck.classList.add("locked");
+    nameCheck.textContent = "✓ Listo";
+    nameCheck.disabled = true; // ⛔ ya no vuelve a editar
+
+    editNameLink.style.display = "block"; // 👈 aparece el link
+
+    updateNameUI();
+    updateStartButton();
+    }
+
+
+    function unlockName() {
+    nameLocked = false;
+    nameInput.readOnly = false;
+
+    nameCheck.disabled = false;
+    nameCheck.classList.remove("locked");
+    nameCheck.textContent = "✓ Listo";
+
+    editNameLink.style.display = "none";
+
+    resetToPreStart();
+    updateNameUI();
+    updateStartButton();
+    }
+
+    function buildCooldownKey(station, direction, type) {
+      return station + "|" + direction + "|" + type;
+    }
+
+    function isOnCooldown(key) {
+      var now = new Date().getTime();
+      var last = cooldownObj[key] || 0;
+      return (now - last) < COOLDOWN_MS;
+    }
+
+    function stampCooldown(key) {
+      cooldownObj[key] = new Date().getTime();
+    }
+
+    function resetApp() {
+    // estado
+    started = false;
+
+    // nombre
+    unlockName();
+    nameInput.value = "";
+
+    // estación
+    stationSelect.value = "";
+
+    // botones y UI
+    hideAllReportButtons();
+    hideNextTrainsBox();
+    btnStart.style.display = "block";
+    btnExit.style.display = "none";
+
+    if (nameSection) nameSection.style.display = "block";
+
+    stopNextTrainsTimer();
+    updateButtonsLayout();
+    updateNameUI();
+    updateStartButton();
+  }
+
+
+    // =========================
+    // Próximos trenes logic
+    // =========================
+    function getServiceKeyByDate(d) {
+      // 0 Domingo, 6 Sábado
+      var day = d.getDay();
+      if (day === 0) return "sunday";
+      if (day === 6) return "saturday";
+      return "weekdays";
+    }
+
+    function pad2(n) {
+      return (n < 10) ? ("0" + n) : ("" + n);
+    }
+
+    function formatNowLabel(d) {
+      return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+    }
+
+    function parseHHMMToDate(baseDate, hhmm, addDays) {
+      // hhmm "HH:MM"
+      var parts = (hhmm || "").split(":");
+      var hh = parseInt(parts[0], 10);
+      var mm = parseInt(parts[1], 10);
+
+      var dt = new Date(baseDate.getTime());
+      dt.setSeconds(0);
+      dt.setMilliseconds(0);
+      dt.setHours(hh);
+      dt.setMinutes(mm);
+
+      if (addDays) {
+        dt.setDate(dt.getDate() + addDays);
+      }
+      return dt;
+    }
+
+    function getNextDeparturesForDirection(stationName, direction, now, howMany) {
+      var schStation = stationSchedules[stationName];
+      if (!schStation) return [];
+
+      var keyToday = getServiceKeyByDate(now);
+      var timesToday = (schStation[keyToday] && schStation[keyToday][direction]) ? schStation[keyToday][direction] : [];
+      var out = [];
+
+      // 1) tomar los de hoy >= ahora
+      for (var i = 0; i < timesToday.length; i++) {
+        var dt = parseHHMMToDate(now, timesToday[i], 0);
+        if (dt.getTime() >= now.getTime()) {
+          out.push({ time: timesToday[i], direction: direction, plusDays: 0 });
+          if (out.length >= howMany) return out;
+        }
+      }
+
+      // 2) completar con los del día siguiente (si falta)
+      var tomorrow = new Date(now.getTime());
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      var keyTomorrow = getServiceKeyByDate(tomorrow);
+      var timesTomorrow = (schStation[keyTomorrow] && schStation[keyTomorrow][direction]) ? schStation[keyTomorrow][direction] : [];
+
+      for (var j = 0; j < timesTomorrow.length; j++) {
+        out.push({ time: timesTomorrow[j], direction: direction, plusDays: 1 });
+        if (out.length >= howMany) return out;
+      }
+
+      return out;
+    }
+
+    function mergeNextDepartures(stationName, now, howManyTotal) {
+      // trae próximos combinados de ambas direcciones, ordenados por datetime real
+      var dirs = ["Lemos", "Lacroze"];
+      var candidates = [];
+
+      for (var i = 0; i < dirs.length; i++) {
+        var list = getNextDeparturesForDirection(stationName, dirs[i], now, howManyTotal);
+        for (var k = 0; k < list.length; k++) {
+          var dt2 = parseHHMMToDate(now, list[k].time, list[k].plusDays);
+          candidates.push({
+            time: list[k].time,
+            direction: list[k].direction,
+            plusDays: list[k].plusDays,
+            ts: dt2.getTime()
+          });
+        }
+      }
+
+      // sort por timestamp
+      candidates.sort(function(a, b) { return a.ts - b.ts; });
+
+      // dedupe simple por ts+dir (por si hay repetidos)
+      var out = [];
+      var seen = {};
+      for (var j = 0; j < candidates.length; j++) {
+        var key = candidates[j].ts + "|" + candidates[j].direction;
+        if (seen[key]) continue;
+        seen[key] = true;
+        out.push(candidates[j]);
+        if (out.length >= howManyTotal) break;
+      }
+
+      return out;
+    }
+
+    function renderNextTrains() {
+      var st = getSelectedStationName();
+      var now = new Date();
+
+      if (!started) {
+        hideNextTrainsBox();
+        return;
+      }
+
+      nextTrainsBox.style.display = "block";
+      nextTrainsList.innerHTML = "";
+
+      // Si no hay datos para estación, mostrar mensaje
+      if (!stationSchedules[st]) {
+        var li0 = document.createElement("li");
+        li0.textContent = "Sin datos de horarios para esta estación (test cargado solo para Lynch).";
+        nextTrainsList.appendChild(li0);
+      }
+
+      var next3 = mergeNextDepartures(st, now, 3);
+
+      if (next3.length === 0) {
+        var li1 = document.createElement("li");
+        li1.textContent = "No hay próximos trenes cargados.";
+        nextTrainsList.appendChild(li1);
+      }
+
+      for (var i = 0; i < next3.length; i++) {
+        var item = next3[i];
+
+        var li = document.createElement("li");
+
+        var left = document.createElement("span");
+        left.className = "dir";
+        left.textContent = "A " + item.direction;
+
+        var right = document.createElement("span");
+        right.className = "time";
+        right.textContent = item.time + (item.plusDays ? " (+1 día)" : "");
+
+        li.appendChild(left);
+        li.appendChild(right);
+
+        nextTrainsList.appendChild(li);
+      }
+    }
+
+     function startNextTrainsTimer() {
+      stopNextTrainsTimer();
+      renderNextTrains();
+      nextTrainsTimer = window.setInterval(function () {
+        renderNextTrains();
+      }, 30000);
+    }
+
+    // =========================
+    // Init
+    // =========================
+    for (var i = 0; i < stations.length; i++) {
+      var opt = document.createElement("option");
+      opt.value = stations[i].name;
+      opt.textContent = stations[i].name;
+      stationSelect.appendChild(opt);
+    }
+
+    hideAllReportButtons();
+    updateButtonsLayout();
+    updateNameUI();
+    updateStartButton();
+    hideNextTrainsBox();
+
+    // =========================
+    // Events
+    // =========================
+    function onNameTyping() {
+      if (nameLocked) return;
+      updateNameUI();
+      updateStartButton();
+    }
+
+    nameInput.addEventListener("input", onNameTyping);
+    nameInput.addEventListener("keyup", onNameTyping);
+    nameInput.addEventListener("change", onNameTyping);
+
+    nameCheck.addEventListener("click", function () {
+    if (nameLocked) unlockName();
+     else lockName();
+   });
+
+// afuera, una sola vez
+ if (editNameLink) {
+ editNameLink.addEventListener("click", function () {
+ unlockName();
+ });
+}
+
+    stationSelect.addEventListener("change", function () {
+      resetToPreStart();
+      updateStartButton();
+    });
+
+    btnStart.addEventListener("click", function () {
+      if (!canStart()) return;
+
+      started = true;
+      if (nameSection) nameSection.style.display = "none";
+      btnStart.style.display = "none";
+
+      // mostrar botones de reporte
+      showReportButtonsForStation(getSelectedStationName());
+
+      // mostrar y actualizar próximos trenes
+      startNextTrainsTimer();
+      btnExit.style.display = "block";
+    });
+
+    for (var j = 0; j < reportButtons.length; j++) {
+      (function (btn) {
+        btn.addEventListener("click", function () {
+          if (!started) return;
+
+          var station = getSelectedStationName();
+          var direction = btn.getAttribute("data-direction");
+          var type = btn.getAttribute("data-type");
+
+          var key = buildCooldownKey(station, direction, type);
+          if (isOnCooldown(key)) return;
+
+          stampCooldown(key);
+
+          // mostrar cartel de gracias inmediatamente
+          showOverlay();
+
+          // log event
+          var eventObj = {
+          name: getName(),
+          station: station,
+          direction: direction,
+          type: type
+         };
+
+        // 🔌 enviar al backend
+       fetch(REPORT_EVENT_URL, {
+       method: "POST",
+       headers: {
+       "Content-Type": "application/json",
+       "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVydWxrZ3pmc3p4cHZzZG9xcm5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NzM3MDUsImV4cCI6MjA4NjE0OTcwNX0.5ZWy7vvzHOHgyJOPKDfQeLrovHzm7m7Nx_BVq79ev3Y",
+       "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVydWxrZ3pmc3p4cHZzZG9xcm5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NzM3MDUsImV4cCI6MjA4NjE0OTcwNX0.5ZWy7vvzHOHgyJOPKDfQeLrovHzm7m7Nx_BVq79ev3Y"
+       },
+       body: JSON.stringify(eventObj)
+       })
+       .then(function (res) {
+       if (!res.ok) {
+       return res.text().then(function (t) {
+       throw new Error("HTTP " + res.status + " - " + t);
+       });
+      }
+       // Supabase puede responder sin JSON
+       return res.text();
+      })
+      .then(function (data) {
+      if (data) console.log("OK:", data);
+      })
+      .catch(function (err) {
+      console.error("Fallo al enviar:", err);
+      });
+
+      // UI se actualiza solo si el POST fue exitoso
+
+
+          btn.disabled = true;
+          window.setTimeout(function () {
+            btn.disabled = false;
+          }, COOLDOWN_MS);
+        });
+      })(reportButtons[j]);
+    }
+
+    btnBack.addEventListener("click", hideOverlay);
+    overlay.addEventListener("click", function (e) {
+      if (e.target === overlay) hideOverlay();
+    });
+
+    btnExit.addEventListener("click", function () {
+    resetApp();
+    });
+  </script>
+</body>
+</html>
